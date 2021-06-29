@@ -9,6 +9,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.bridgelabz.DatabaseException.ExceptionType;
 
@@ -68,6 +70,61 @@ public class EmployeePayrollDBService {
 				Date.valueOf(startDate), Date.valueOf(endDate));
 
 		return getEmployeePayrollData(query);
+	}
+
+	/**
+	 * @return sum of salaries against gender
+	 * @throws DatabaseException
+	 */
+	public Map<String, Double> getSumOfSalariesByGender() throws DatabaseException {
+		String query = "SELECT gender, SUM(salary) as salary FROM employee_payroll GROUP BY gender";
+		return performOperationsOnsalaryByGender(query);
+	}
+
+	/**
+	 * @return average salary by gender
+	 * @throws DatabaseException
+	 */
+	public Map<String, Double> getAvgSalaryByGender() throws DatabaseException {
+		String query = "SELECT gender, AVG(salary) as salary FROM employee_payroll GROUP BY gender";
+		return performOperationsOnsalaryByGender(query);
+	}
+
+	/**
+	 * @return minimum salary by gender
+	 * @throws DatabaseException
+	 */
+	public Map<String, Double> getMinSalaryByGender() throws DatabaseException {
+		String query = "SELECT gender, MIN(salary) as salary FROM employee_payroll GROUP BY gender";
+		return performOperationsOnsalaryByGender(query);
+	}
+
+	/**
+	 * @return maximum salary by gender
+	 * @throws DatabaseException
+	 */
+	public Map<String, Double> getMaxSalaryByGender() throws DatabaseException {
+		String query = "SELECT gender, MAX(salary) as salary FROM employee_payroll GROUP BY gender";
+		return performOperationsOnsalaryByGender(query);
+	}
+
+	/**
+	 * @return employee count by gender
+	 * @throws DatabaseException
+	 */
+	public Map<String, Integer> getCountByGender() throws DatabaseException {
+		String query = "SELECT gender, Count(salary) as count FROM employee_payroll GROUP BY gender";
+		Map<String, Integer> map = new HashMap<String, Integer>();
+		try(Connection connection = getConnection();){
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+			while(result.next()) {
+				map.put(result.getString("gender"), result.getInt("count"));
+			}
+			return map;
+		} catch (SQLException e) {
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
 	}
 
 	/**
@@ -168,6 +225,25 @@ public class EmployeePayrollDBService {
 			Statement statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery(query);
 			return getEmployeePayrollData(resultSet);
+		} catch (SQLException e) {
+			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
+		}
+	}
+
+	/**
+	 * @param query
+	 * Perform Database operation such as Sum, avg, min, max, count and return the result
+	 * @throws DatabaseException
+	 */
+	private Map<String, Double> performOperationsOnsalaryByGender(String query) throws DatabaseException {
+		Map<String, Double> map = new HashMap<String, Double>();
+		try(Connection connection = getConnection()){
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+			while(result.next()) {
+				map.put(result.getString("gender"), result.getDouble("salary"));
+			}
+			return map;
 		} catch (SQLException e) {
 			throw new DatabaseException("Error while executing the query", ExceptionType.UNABLE_TO_EXECUTE_QUERY);
 		}
